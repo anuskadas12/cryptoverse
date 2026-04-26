@@ -143,6 +143,10 @@
     transition: all 0.2s ease;
     background-color: rgba(26, 35, 66, 0.4);
     position: relative;
+    border: 0;
+    width: 100%;
+    font: inherit;
+    text-align: left;
 }
 
 .ai-history-item:hover {

@@ -1,37 +1,53 @@
 const {
-    GoogleGenerativeAI,
-    HarmCategory,
-    HarmBlockThreshold,
-  } = require("@google/generative-ai");
+  GoogleGenerativeAI,
+} = require("@google/generative-ai");
   
-  const apiKey = process.env.GEMINI_API_KEY || "AIzaSyD-fGavP7IJ35o3MMu_KDj2J1dpLG5jpl8";
-  const genAI = new GoogleGenerativeAI(apiKey);
+const generationConfig = {
+  temperature: 0.7,
+  topP: 0.95,
+  topK: 40,
+  maxOutputTokens: 2048,
+  responseMimeType: "text/plain",
+};
   
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    systemInstruction: "awesine ai that answers every questions",
+let model;
+
+function getModel() {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    const error = new Error("Missing GEMINI_API_KEY. Put it in a .env file or set it in your environment.");
+    error.status = 503;
+    throw error;
+  }
+
+  if (!model) {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    model = genAI.getGenerativeModel({
+      model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+      systemInstruction: "You are CryptoVerse AI, a clear and practical assistant for Web3, blockchain, smart contracts, security, and crypto education. Give concise, safe, and accurate answers. Do not provide financial guarantees.",
+    });
+  }
+
+  return model;
+}
+
+async function getAi(prompt) {
+  const cleanPrompt = typeof prompt === "string" ? prompt.trim() : "";
+
+  if (!cleanPrompt) {
+    const error = new Error("Prompt is required.");
+    error.status = 400;
+    throw error;
+  }
+
+  const chatSession = getModel().startChat({
+    generationConfig,
+    history: [],
   });
   
-  const generationConfig = {
-    temperature: 1,
-    topP: 0.95,
-    topK: 40,
-    maxOutputTokens: 8192,
-    responseMimeType: "text/plain",
-  };
+  const result = await chatSession.sendMessage(cleanPrompt);
+  return result.response.text();
+}
   
-  async function getAi(prompt) {
-    const chatSession = model.startChat({
-      generationConfig,
-      history: [
-      ],
-    });
-  
-    const result = await chatSession.sendMessage(prompt);
-    // console.log(result.response.text());
-    return result.response.text();
-  }
-  
-//   getAi("who is gandhi");
-
 module.exports = getAi;
